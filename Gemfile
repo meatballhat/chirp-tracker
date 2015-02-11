@@ -1,9 +1,11 @@
 source 'https://rubygems.org'
 
-gem 'pry', group: %i(test development)
+ruby '2.1.5' if ENV.key?('DYNO')
+
+gem 'pry', group: [:test, :development]
 gem 'puma'
-gem 'rake', group: %i(test development)
+gem 'rake', group: [:test, :development]
 gem 'redis'
-gem 'rerun', group: %i(test development)
-gem 'rspec', group: %i(test development)
+gem 'rerun', group: [:test, :development]
+gem 'rspec', group: [:test, :development]
 gem 'sinatra'
