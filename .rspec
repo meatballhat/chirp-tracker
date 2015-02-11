@@ -1,0 +1,3 @@
+-r spec_helper
+-f documentation
+-c

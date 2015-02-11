@@ -4,6 +4,7 @@ GEM
     celluloid (0.16.0)
       timers (~> 4.0.0)
     coderay (1.1.0)
+    diff-lcs (1.2.5)
     ffi (1.9.6)
     hitimes (1.2.2)
     listen (2.8.5)
@@ -20,12 +21,25 @@ GEM
     rack (1.6.0)
     rack-protection (1.5.3)
       rack
+    rake (10.4.2)
     rb-fsevent (0.9.4)
     rb-inotify (0.9.5)
       ffi (>= 0.5.0)
     redis (3.2.0)
     rerun (0.10.0)
       listen (~> 2.7, >= 2.7.3)
+    rspec (3.1.0)
+      rspec-core (~> 3.1.0)
+      rspec-expectations (~> 3.1.0)
+      rspec-mocks (~> 3.1.0)
+    rspec-core (3.1.4)
+      rspec-support (~> 3.1.0)
+    rspec-expectations (3.1.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.1.0)
+    rspec-mocks (3.1.1)
+      rspec-support (~> 3.1.0)
+    rspec-support (3.1.0)
     sinatra (1.4.5)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -41,6 +55,8 @@ PLATFORMS
 DEPENDENCIES
   pry
   puma
+  rake
   redis
   rerun
+  rspec
   sinatra
