@@ -1,4 +1,8 @@
 language: ruby
 deploy:
   provider: heroku
+  api_key:
+    secure: N4+mYUAZFiF2j0vbt0wfLxbq89CbeDCDb69/6UUpn8t/keLEMtHBJVxMyQH47AjC6OMzd3si5nrJgTE8wan99sMTtnkJEcXliEud0HsHHtqm8GgdpGxHPFOHd7eiUe/7HbLNTJgtdKebOVEVbRxar5FpNntUjjZysGt1sX83EsI=
   app: chirp-tracker-production
+  on:
+    repo: travis-infrastructure/chirp-tracker
