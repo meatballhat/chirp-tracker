@@ -84,17 +84,19 @@ class ChirpTracker < Sinatra::Base
     repo = params[:repo] || '*'
     chirps = settings.db.keys("github:timestamps:#{repo}:*").map do |key|
       repo, commit = key.split(':')[2..3]
-      github_timestamp = settings.db.get(key) || 0.0
-      travis_timestamp = settings.db.get("travis:timestamps:#{repo}:#{commit}") || 0.0
+      github_timestamp = Float(settings.db.get(key) || 0.0)
+      travis_timestamp = Float(settings.db.get("travis:timestamps:#{repo}:#{commit}") || 0.0)
       {
         commit: commit,
         repo: repo,
-        delta: Float(travis_timestamp) - Float(github_timestamp)
+        travis_timestamp: travis_timestamp,
+        github_timestamp: github_timestamp,
+        delta: travis_timestamp - github_timestamp
       }
     end
 
     status 200
-    json chirps: chirps.reject { |chirp| chirp[:delta] < 0 }
+    json chirps: chirps.reject { |chirp| chirp[:delta] < 0 }.sort { |chirp| chirp[:travis_timestamp] }
   end
 
   def run!
