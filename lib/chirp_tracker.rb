@@ -85,7 +85,7 @@ class ChirpTracker < Sinatra::Base
     end
 
     status 200
-    respond_json chirps: chirps
+    respond_json chirps: chirps.reject { |chirp| chirp[:delta] < 0 }
   end
 
   def run!
