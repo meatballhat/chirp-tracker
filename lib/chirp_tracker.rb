@@ -4,6 +4,7 @@ require 'json'
 require 'openssl'
 require 'redis'
 require 'sinatra/base'
+require 'sinatra/json'
 
 require_relative 'l2met_log'
 require_relative 'sinatra/l2met'
@@ -20,10 +21,6 @@ class ChirpTracker < Sinatra::Base
   set :travis_auth_disabled, !!ENV['TRAVIS_AUTH_DISABLED']
 
   helpers do
-    def respond_json(whatever)
-      JSON.pretty_generate(whatever) << "\n"
-    end
-
     def verify_hub_signature!(request)
       hub_sig = request.env.fetch('HTTP_X_HUB_SIGNATURE')
       request.body.rewind
@@ -54,7 +51,7 @@ class ChirpTracker < Sinatra::Base
     settings.db.setex("github:timestamps:#{repo}:#{head_commit}", settings.ttl, Time.now.utc.to_i)
 
     status 200
-    respond_json ok: :great
+    json ok: :great
   end
 
   post '/travis' do
@@ -73,7 +70,7 @@ class ChirpTracker < Sinatra::Base
     settings.db.setex("travis:timestamps:#{repo}:#{head_commit}", settings.ttl, Time.now.utc.to_i)
 
     status 200
-    respond_json ok: :great
+    json ok: :great
   end
 
   get '/chirps' do
@@ -90,7 +87,7 @@ class ChirpTracker < Sinatra::Base
     end
 
     status 200
-    respond_json chirps: chirps.reject { |chirp| chirp[:delta] < 0 }
+    json chirps: chirps.reject { |chirp| chirp[:delta] < 0 }
   end
 
   def run!
