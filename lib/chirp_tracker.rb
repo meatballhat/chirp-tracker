@@ -17,6 +17,7 @@ class ChirpTracker < Sinatra::Base
   set :ttl, Integer(ENV.fetch('PAYLOAD_TTL', '3600'))
   set :secret_token, "#{ENV['SECRET_TOKEN']}"
   set :auths, "#{ENV['TRAVIS_AUTHS']}".split(':').map { |auth| "token #{auth.strip}" }
+  set :travis_auth_disabled, !!ENV['TRAVIS_AUTH_DISABLED']
 
   helpers do
     def respond_json(whatever)
@@ -57,7 +58,7 @@ class ChirpTracker < Sinatra::Base
   post '/travis' do
     log message: 'received something from travis', level: :debug, params: params
 
-    unless settings.development?
+    unless settings.development? || settings.travis_auth_disabled?
       halt 401 unless settings.auths.include?(request.env['HTTP_AUTHORIZATION'])
     end
 
