@@ -62,6 +62,8 @@ class ChirpTracker < Sinatra::Base
       halt 401 unless settings.auths.include?(request.env['HTTP_AUTHORIZATION'])
     end
 
+    halt 400 unless params[:payload]
+
     body = JSON.parse(params[:payload])
     head_commit = body.fetch('commit')
     settings.db.setex("travis:payload:#{head_commit}", settings.ttl, params[:payload])
