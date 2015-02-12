@@ -43,7 +43,12 @@ class ChirpTracker < Sinatra::Base
 
     log message: 'received something from github', level: :debug, params: params
 
+    halt 400, 'missing payload' unless params[:payload]
+
     body = JSON.parse(params[:payload])
+
+    halt 400, 'missing expected payload keys' unless body.key?('head_commit') && body.key?('repository')
+
     head_commit = body.fetch('head_commit').fetch('id')
     repo = body.fetch('repository').fetch('full_name')
 
@@ -61,9 +66,11 @@ class ChirpTracker < Sinatra::Base
       halt 401 unless settings.auths.include?(request.env['HTTP_AUTHORIZATION'])
     end
 
-    halt 400 unless params[:payload]
+    halt 400, 'missing payload'  unless params[:payload]
 
     body = JSON.parse(params[:payload])
+    halt 400, 'missing expected payload keys' unless body.key?('commit') && body.key?('repository')
+
     head_commit = body.fetch('commit')
     repo = "#{body.fetch('repository').fetch('owner_name')}/#{body.fetch('repository').fetch('name')}"
     settings.db.setex("travis:payloads:#{repo}:#{head_commit}", settings.ttl, params[:payload])
