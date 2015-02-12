@@ -48,8 +48,10 @@ class ChirpTracker < Sinatra::Base
 
     body = JSON.parse(params[:payload])
     head_commit = body.fetch('head_commit').fetch('id')
-    settings.db.setex("github:payload:#{head_commit}", settings.ttl, params[:payload])
-    settings.db.setex("github:timestamp:#{head_commit}", settings.ttl, Time.now.utc.to_i)
+    repo = body.fetch('repository').fetch('full_name')
+
+    settings.db.setex("github:payloads:#{repo}:#{head_commit}", settings.ttl, params[:payload])
+    settings.db.setex("github:timestamps:#{repo}:#{head_commit}", settings.ttl, Time.now.utc.to_i)
 
     status 200
     respond_json ok: :great
@@ -66,20 +68,23 @@ class ChirpTracker < Sinatra::Base
 
     body = JSON.parse(params[:payload])
     head_commit = body.fetch('commit')
-    settings.db.setex("travis:payload:#{head_commit}", settings.ttl, params[:payload])
-    settings.db.setex("travis:timestamp:#{head_commit}", settings.ttl, Time.now.utc.to_i)
+    repo = "#{body.fetch('repository').fetch('owner_name')}/#{body.fetch('repository').fetch('name')}"
+    settings.db.setex("travis:payloads:#{repo}:#{head_commit}", settings.ttl, params[:payload])
+    settings.db.setex("travis:timestamps:#{repo}:#{head_commit}", settings.ttl, Time.now.utc.to_i)
 
     status 200
     respond_json ok: :great
   end
 
   get '/chirps' do
-    chirps = settings.db.keys('github:timestamp:*').map do |key|
-      commit = key.split(':').last
+    repo = params[:repo] || '*'
+    chirps = settings.db.keys("github:timestamps:#{repo}:*").map do |key|
+      repo, commit = key.split(':')[2..3]
       github_timestamp = settings.db.get(key) || 0.0
-      travis_timestamp = settings.db.get("travis:timestamp:#{commit}") || 0.0
+      travis_timestamp = settings.db.get("travis:timestamps:#{repo}:#{commit}") || 0.0
       {
         commit: commit,
+        repo: repo,
         delta: Float(travis_timestamp) - Float(github_timestamp)
       }
     end
