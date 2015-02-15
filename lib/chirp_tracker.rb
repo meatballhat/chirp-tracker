@@ -86,6 +86,7 @@ class ChirpTracker < Sinatra::Base
   end
 
   get '/chirps' do
+    now = Time.now.utc.to_i
     repo = dumb_sanitized(params[:repo] || '*')
     branch = dumb_sanitized(params[:branch] || '*')
 
@@ -94,6 +95,7 @@ class ChirpTracker < Sinatra::Base
       travis_timestamp = Float(settings.db.get(key) || 0.0)
       github_timestamp = Float(settings.db.get("github:timestamps:#{repo}:#{commit}") || 0.0)
       {
+        age: now - travis_timestamp,
         branch: branch,
         commit: commit,
         delta: travis_timestamp - github_timestamp,
@@ -106,10 +108,11 @@ class ChirpTracker < Sinatra::Base
     chirps.reject! { |chirp| chirp[:delta] < 0 }
     chirps.sort_by! { |chirp| chirp[:travis_timestamp] }
 
-    last_age = Time.now.utc.to_i - ((chirps.last || {})[:travis_timestamp] || 0)
-
     status 200
-    json chirps: chirps, _meta: { last_age: last_age, count:  chirps.length }
+    json chirps: chirps, _meta: {
+      most_recent: chirps.last,
+      count: chirps.length
+    }
   end
 
   def run!
