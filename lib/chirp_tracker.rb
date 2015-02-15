@@ -28,6 +28,10 @@ class ChirpTracker < Sinatra::Base
       signature = 'sha1=' + OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new('sha1'), settings.secret_token, payload_body)
       return halt 500, "Signatures didn't match!" unless Rack::Utils.secure_compare(signature, hub_sig)
     end
+
+    def dumb_sanitized(str)
+      str.gsub(/[^-a-zA-Z0-9_\/\.\*].*/, '')
+    end
   end
 
   configure do
@@ -72,26 +76,30 @@ class ChirpTracker < Sinatra::Base
     halt 400, 'missing expected payload keys' unless body.key?('commit') && body.key?('repository')
 
     head_commit = body.fetch('commit')
+    branch = body.fetch('branch')
     repo = "#{body.fetch('repository').fetch('owner_name')}/#{body.fetch('repository').fetch('name')}"
-    settings.db.setex("travis:payloads:#{repo}:#{head_commit}", settings.ttl, params[:payload])
-    settings.db.setex("travis:timestamps:#{repo}:#{head_commit}", settings.ttl, Time.now.utc.to_i)
+    settings.db.setex("travis:payloads:#{repo}:#{branch}:#{head_commit}", settings.ttl, params[:payload])
+    settings.db.setex("travis:timestamps:#{repo}:#{branch}:#{head_commit}", settings.ttl, Time.now.utc.to_i)
 
     status 200
     json ok: :great
   end
 
   get '/chirps' do
-    repo = params[:repo] || '*'
-    chirps = settings.db.keys("github:timestamps:#{repo}:*").map do |key|
-      repo, commit = key.split(':')[2..3]
-      github_timestamp = Float(settings.db.get(key) || 0.0)
-      travis_timestamp = Float(settings.db.get("travis:timestamps:#{repo}:#{commit}") || 0.0)
+    repo = dumb_sanitized(params[:repo] || '*')
+    branch = dumb_sanitized(params[:branch] || '*')
+
+    chirps = settings.db.keys("travis:timestamps:#{repo}:#{branch}:*").map do |key|
+      repo, branch, commit = key.split(':')[2..4]
+      travis_timestamp = Float(settings.db.get(key) || 0.0)
+      github_timestamp = Float(settings.db.get("github:timestamps:#{repo}:#{commit}") || 0.0)
       {
+        branch: branch,
         commit: commit,
-        repo: repo,
-        travis_timestamp: travis_timestamp,
+        delta: travis_timestamp - github_timestamp,
         github_timestamp: github_timestamp,
-        delta: travis_timestamp - github_timestamp
+        repo: repo,
+        travis_timestamp: travis_timestamp
       }
     end
 
