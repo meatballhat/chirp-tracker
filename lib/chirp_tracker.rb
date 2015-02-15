@@ -109,6 +109,7 @@ class ChirpTracker < Sinatra::Base
 
     chirps.reject! { |chirp| chirp[:delta] < 0 }
     chirps.sort_by! { |chirp| chirp[:travis_timestamp] }
+    chirps.reverse!
 
     status 200
     json chirps: chirps[0..(param_limit-1)], _meta: {
@@ -118,7 +119,7 @@ class ChirpTracker < Sinatra::Base
         limit: param_limit,
         repo: param_repo
       },
-      most_recent: chirps.last,
+      most_recent: chirps.first,
     }
   end
 
