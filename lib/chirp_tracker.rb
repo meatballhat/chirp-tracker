@@ -103,8 +103,11 @@ class ChirpTracker < Sinatra::Base
       }
     end
 
+    chirps = chirps.reject { |chirp| chirp[:delta] < 0 }.sort { |chirp| chirp[:travis_timestamp] }
+    max_age = Time.now.to_i - ((chirps.last || {})[:travis_timestamp] || 0)
+
     status 200
-    json chirps: chirps.reject { |chirp| chirp[:delta] < 0 }.sort { |chirp| chirp[:travis_timestamp] }
+    json chirps: chirps, _meta: { max_age: max_age, count:  chirps.length }
   end
 
   def run!
