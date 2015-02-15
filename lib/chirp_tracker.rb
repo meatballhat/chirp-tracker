@@ -107,7 +107,12 @@ class ChirpTracker < Sinatra::Base
       }
     end
 
-    chirps.reject! { |chirp| chirp[:delta] < 0 }
+    chirps.reject! do |chirp|
+      chirp[:delta] < 0 ||
+        chirp[:github_timestamp] == 0 ||
+        chirp[:travis_timestamp] == 0
+    end
+
     chirps.sort_by! { |chirp| chirp[:travis_timestamp] }
     chirps.reverse!
 
