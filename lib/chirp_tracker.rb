@@ -87,10 +87,12 @@ class ChirpTracker < Sinatra::Base
 
   get '/chirps' do
     now = Time.now.utc.to_i
-    repo = dumb_sanitized(params[:repo] || '*')
-    branch = dumb_sanitized(params[:branch] || '*')
+    param_limit = Integer(dumb_sanitized(params[:limit] || '100'))
+    param_limit = param_limit < 1 ? 1 : param_limit
+    param_repo = dumb_sanitized(params[:repo] || '*')
+    param_branch = dumb_sanitized(params[:branch] || '*')
 
-    chirps = settings.db.keys("travis:timestamps:#{repo}:#{branch}:*").map do |key|
+    chirps = settings.db.keys("travis:timestamps:#{param_repo}:#{param_branch}:*").map do |key|
       repo, branch, commit = key.split(':')[2..4]
       travis_timestamp = Float(settings.db.get(key) || 0.0)
       github_timestamp = Float(settings.db.get("github:timestamps:#{repo}:#{commit}") || 0.0)
@@ -109,9 +111,14 @@ class ChirpTracker < Sinatra::Base
     chirps.sort_by! { |chirp| chirp[:travis_timestamp] }
 
     status 200
-    json chirps: chirps, _meta: {
+    json chirps: chirps[0..(param_limit-1)], _meta: {
+      params: {
+        branch: param_branch,
+        count: chirps.length,
+        limit: param_limit,
+        repo: param_repo
+      },
       most_recent: chirps.last,
-      count: chirps.length
     }
   end
 
