@@ -119,10 +119,12 @@ class ChirpTracker < Sinatra::Base
       level: :info
     )
 
-    chirps.reject! do |chirp|
-      chirp[:delta] < 0 ||
-        chirp[:github_timestamp] == 0 ||
-        chirp[:travis_timestamp] == 0
+    unless params[:nofilter] == '1'
+      chirps.reject! do |chirp|
+        chirp[:delta] < 0 ||
+          chirp[:github_timestamp] == 0 ||
+          chirp[:travis_timestamp] == 0
+      end
     end
 
     log log_params.merge(
