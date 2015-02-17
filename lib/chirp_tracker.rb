@@ -107,11 +107,29 @@ class ChirpTracker < Sinatra::Base
       }
     end
 
+    log_params = {
+      branch: param_branch,
+      limit: param_limit,
+      repo: param_repo
+    }
+
+    log log_params.merge(
+      message: 'pre-filtered chirps',
+      count: chirps.length,
+      level: :info
+    )
+
     chirps.reject! do |chirp|
       chirp[:delta] < 0 ||
         chirp[:github_timestamp] == 0 ||
         chirp[:travis_timestamp] == 0
     end
+
+    log log_params.merge(
+      message: 'post-filtered chirps',
+      count: chirps.length,
+      level: :info
+    )
 
     chirps.sort_by! { |chirp| chirp[:travis_timestamp] }
     chirps.reverse!
