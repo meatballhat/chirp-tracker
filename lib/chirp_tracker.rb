@@ -63,6 +63,8 @@ class ChirpTracker < Sinatra::Base
     halt 400, 'missing expected payload keys' unless
       body.key?('head_commit') && body.key?('repository')
 
+    log body.merge(message: 'parsed body', level: :debug)
+
     head_commit = body.fetch('head_commit').fetch('id')
     repo = body.fetch('repository').fetch('full_name')
 
@@ -96,6 +98,8 @@ class ChirpTracker < Sinatra::Base
       body.key?('commit') && body.key?('repository')
 
     head_commit = body.fetch('commit')
+
+    log body.merge(message: 'parsed body', level: :debug)
 
     queue = Hash[
       body.fetch('config', {}).fetch('env', '').split.map { |s| s.split('=') }
