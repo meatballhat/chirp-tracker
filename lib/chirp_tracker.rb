@@ -182,15 +182,18 @@ class ChirpTracker < Sinatra::Base
     chirps.reverse!
 
     status 200
-    json chirps: chirps[0..(param_limit - 1)], _meta: {
-      params: {
-        queue: param_queue,
-        count: chirps.length,
-        limit: param_limit,
-        repo: param_repo
-      },
-      most_recent: chirps.first
-    }
+    json(
+      data: chirps[0..(param_limit - 1)],
+      meta: {
+        params: {
+          queue: param_queue,
+          count: chirps.length,
+          limit: param_limit,
+          repo: param_repo
+        },
+        most_recent: chirps.first
+      }
+    )
   end
 
   def run!
