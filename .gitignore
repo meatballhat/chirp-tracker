@@ -35,3 +35,4 @@ build/
 
 # nope
 vendor/
+.ruby-version

@@ -35,7 +35,7 @@ module L2metLog
       elapsed = (Time.now.to_f - start.to_f) * 1000
       data.merge!("measure.#{name}" => elapsed.round)
     end
-    data.reduce(out = String.new) do |s, (key, value)|
+    data.reduce(out = '') do |s, (key, value)|
       value = if value.is_a?(String)
                 "\"#{value}\""
               elsif value.respond_to?(:iso8601)
