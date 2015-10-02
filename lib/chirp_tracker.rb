@@ -5,6 +5,7 @@ require 'openssl'
 require 'redis'
 require 'sinatra/base'
 require 'sinatra/json'
+require 'time'
 
 require_relative 'l2met_log'
 require_relative 'sinatra/l2met'
@@ -101,25 +102,38 @@ class ChirpTracker < Sinatra::Base
 
     log body.merge(message: 'parsed body', level: :debug)
 
-    queue = Hash[
-      body.fetch('config', {}).fetch('env', '').split.map { |s| s.split('=') }
-    ].fetch('QUEUE', 'unknown').gsub(/['"]$/, '').gsub(/^['"]/, '')
+    queues_timestamps = {}
+    body.fetch('matrix', []).each do |entry|
+      queue = Hash[
+        entry.fetch(
+          'config', {}
+        ).fetch(
+          'env', ''
+        ).split.map { |s| s.split('=') }
+      ].fetch(
+        'QUEUE', 'unknown'
+      ).gsub(/['"]$/, '').gsub(/^['"]/, '')
+      next if queue == 'unknown'
+      queues_timestamps[queue] = Time.parse(entry.fetch('finished_at'))
+    end
 
     repo = %W(
       #{body.fetch('repository').fetch('owner_name')}
       #{body.fetch('repository').fetch('name')}
     ).join('/')
 
-    settings.db.setex(
-      "travis:payloads:#{repo}:#{queue}:#{head_commit}",
-      settings.ttl,
-      params[:payload]
-    )
-    settings.db.setex(
-      "travis:timestamps:#{repo}:#{queue}:#{head_commit}",
-      settings.ttl,
-      Time.now.utc.to_i
-    )
+    queues_timestamps.each do |queue, timestamp|
+      settings.db.setex(
+        "travis:payloads:#{repo}:#{queue}:#{head_commit}",
+        settings.ttl,
+        params[:payload]
+      )
+      settings.db.setex(
+        "travis:timestamps:#{repo}:#{queue}:#{head_commit}",
+        settings.ttl,
+        timestamp.to_i
+      )
+    end
 
     status 200
     json ok: :great
