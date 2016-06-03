@@ -1,7 +1,5 @@
 source 'https://rubygems.org'
 
-ruby '2.2.3' if ENV.key?('DYNO')
-
 gem 'pry', group: [:test, :development]
 gem 'puma'
 gem 'rake', group: [:test, :development]
