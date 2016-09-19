@@ -1,4 +1,7 @@
+# frozen_string_literal: true
 source 'https://rubygems.org'
+
+ruby '2.3.1' if ENV.key?('DYNO')
 
 gem 'pry', group: [:test, :development]
 gem 'puma'
