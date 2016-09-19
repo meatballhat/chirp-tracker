@@ -5,7 +5,7 @@ ruby '2.3.1' if ENV.key?('DYNO')
 
 gem 'pry', group: [:test, :development]
 gem 'puma'
-gem 'rake', group: [:test, :development]
+gem 'rake'
 gem 'redis'
 gem 'rerun', group: [:test, :development]
 gem 'rspec', group: [:test, :development]
