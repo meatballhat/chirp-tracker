@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # lifted from https://gist.github.com/ryandotsmith/5343120
 # with modifications
 module L2metLog
@@ -7,7 +8,7 @@ module L2metLog
     warn: 30,
     error: 40,
     fatal: 50
-  }
+  }.freeze
 
   class << self
     attr_writer :default_log_level
@@ -33,7 +34,7 @@ module L2metLog
       start = Time.now
       result = yield
       elapsed = (Time.now.to_f - start.to_f) * 1000
-      data.merge!("measure.#{name}" => elapsed.round)
+      data["measure.#{name}"] = elapsed.round
     end
     data.reduce(out = '') do |s, (key, value)|
       value = if value.is_a?(String)

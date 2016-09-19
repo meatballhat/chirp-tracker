@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 $LOAD_PATH.unshift(File.expand_path('../lib', __FILE__))
 
 require 'json'
@@ -21,8 +22,8 @@ class ChirpTracker < Sinatra::Base
     ] || 'redis://localhost:6379/0')
   )
   set :ttl, Integer(ENV.fetch('PAYLOAD_TTL', '3600'))
-  set :secret_token, "#{ENV['SECRET_TOKEN']}"
-  set :auths, "#{ENV['TRAVIS_AUTHS']}".split(':').map { |a| "token #{a.strip}" }
+  set :secret_token, ENV['SECRET_TOKEN'].to_s
+  set :auths, ENV['TRAVIS_AUTHS'].to_s.split(':').map { |a| "token #{a.strip}" }
 
   set :travis_auth_disabled, !ENV['TRAVIS_AUTH_DISABLED'].nil?
 
@@ -184,9 +185,9 @@ class ChirpTracker < Sinatra::Base
 
     unless params[:nofilter] == '1'
       chirps.reject! do |chirp|
-        chirp[:delta] < 0 ||
-          chirp[:github_timestamp] == 0 ||
-          chirp[:travis_timestamp] == 0
+        (chirp[:delta]).negative? ||
+          (chirp[:github_timestamp]).zero? ||
+          (chirp[:travis_timestamp]).zero?
       end
     end
 
