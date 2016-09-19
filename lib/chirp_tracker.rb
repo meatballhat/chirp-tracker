@@ -106,11 +106,11 @@ class ChirpTracker < Sinatra::Base
     queues_timestamps = {}
     body.fetch('matrix', []).each do |entry|
       queue = Hash[
-        entry.fetch(
+        Array(entry.fetch(
           'config', {}
         ).fetch(
           'env', ''
-        ).split.map { |s| s.split('=') }
+        )).first.split.map { |s| s.split('=') }
       ].fetch(
         'QUEUE', 'unknown'
       ).gsub(/['"]$/, '').gsub(/^['"]/, '')
