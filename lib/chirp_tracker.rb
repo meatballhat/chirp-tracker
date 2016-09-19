@@ -185,9 +185,9 @@ class ChirpTracker < Sinatra::Base
 
     unless params[:nofilter] == '1'
       chirps.reject! do |chirp|
-        (chirp[:delta]).negative? ||
-          (chirp[:github_timestamp]).zero? ||
-          (chirp[:travis_timestamp]).zero?
+        chirp[:delta].negative? ||
+          chirp[:github_timestamp].zero? ||
+          chirp[:travis_timestamp].zero?
       end
     end
 
