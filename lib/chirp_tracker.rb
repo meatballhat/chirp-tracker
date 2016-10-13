@@ -39,7 +39,7 @@ class ChirpTracker < Sinatra::Base
         Rack::Utils.secure_compare(signature, hub_sig)
     end
 
-    def dumb_sanitized(str)
+    def simple_sanitized(str)
       str.gsub(%r{[^-a-zA-Z0-9_\/\.\*].*}, '')
     end
   end
@@ -47,6 +47,10 @@ class ChirpTracker < Sinatra::Base
   configure do
     extend L2metLog
     $stdout.sync = true
+  end
+
+  before do
+    content_type 'application/json'
   end
 
   post '/github' do
@@ -140,12 +144,44 @@ class ChirpTracker < Sinatra::Base
     json ok: :great
   end
 
+  post '/stats' do
+    queue = request.env['HTTP_TRAVIS_QUEUE'] || 'unknown'
+    site = request.env['HTTP_TRAVIS_SITE'] || 'unknown'
+    stats = {}
+    begin
+      stats.merge!(JSON.parse(request.body.read))
+    rescue => e
+      halt 400, JSON.dump(error: e.to_s)
+    end
+
+    halt 400, JSON.dump(error: 'missing data key') unless stats.key?('data')
+
+    data = stats.fetch('data')
+
+    unless data.all? { |r| r.key?('script') && r.key?('exe_time') }
+      halt 400, JSON.dump(error: 'incorrect record format')
+    end
+
+    log_record = {}
+
+    data.each do |record|
+      key = "sample#chirp.#{site}.#{queue}.#{record.fetch('script')}"
+      log_record[key] = record.fetch('exe_time')
+    end
+
+    halt 200, JSON.dump(huh: :what) if log_record.empty?
+
+    log(log_record)
+    status 200
+    json ok: :great
+  end
+
   get '/chirps' do
     now = Time.now.utc.to_i
-    param_limit = Integer(dumb_sanitized(params[:limit] || '100'))
+    param_limit = Integer(simple_sanitized(params[:limit] || '100'))
     param_limit = param_limit < 1 ? 1 : param_limit
-    param_repo = dumb_sanitized(params[:repo] || '*')
-    param_queue = dumb_sanitized(params[:queue] || '*')
+    param_repo = simple_sanitized(params[:repo] || '*')
+    param_queue = simple_sanitized(params[:queue] || '*')
 
     chirps = settings.db.keys(
       "travis:timestamps:#{param_repo}:#{param_queue}:*"
