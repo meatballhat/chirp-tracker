@@ -146,6 +146,7 @@ class ChirpTracker < Sinatra::Base
 
   post '/stats' do
     queue = request.env['HTTP_TRAVIS_QUEUE'] || 'unknown'
+    site = request.env['HTTP_TRAVIS_SITE'] || 'unknown'
     stats = {}
     begin
       stats.merge!(JSON.parse(request.body.read))
@@ -164,7 +165,7 @@ class ChirpTracker < Sinatra::Base
     log_record = {}
 
     data.each do |record|
-      key = "sample#chirp.#{queue}.#{record.fetch('script')}"
+      key = "sample#chirp.#{site}.#{queue}.#{record.fetch('script')}"
       log_record[key] = record.fetch('exe_time')
     end
 

@@ -7,7 +7,7 @@ describe 'Chirp Tracker' do
   context 'POST /stats' do
     it 'forwards stats to logs' do
       expect_any_instance_of(app).to receive(:log).with(
-        'sample#chirp.unknown.test' => '1.5s'
+        'sample#chirp.unknown.unknown.test' => '1.5s'
       )
       post '/stats', '{"data":[{"script":"test","exe_time":"1.5s"}]}'
       expect(last_response.status).to eq(200)
