@@ -164,7 +164,7 @@ class ChirpTracker < Sinatra::Base
     log_record = {}
 
     data.each do |record|
-      key = "measure#chirp.#{queue}.#{record.fetch('script')}"
+      key = "sample#chirp.#{queue}.#{record.fetch('script')}"
       log_record[key] = record.fetch('exe_time')
     end
 
