@@ -273,10 +273,19 @@ class ChirpTracker < Sinatra::Base
   end
 
   post '/zzz' do
-    halt 400 unless params[:zzz]
+    halt 400, '{"error":"missing params"}' unless params[:zzz] && params[:kb]
+    kilobytes = Integer(params[:kb])
 
     tmp_path = params[:zzz][:tempfile].path
-    log message: 'received file upload', path: tmp_path
+    size = File.stat(tmp_path).size
+    size_kb = size / 1000
+
+    log message: 'received file upload', path: tmp_path, size: size_kb
+
+    halt 400, %(
+      {"error":"mismatched size: expected=#{kilobytes} actual=#{size_kb}"}
+    ).strip unless size_kb == kilobytes
+
     FileUtils.rm_f(tmp_path)
     status 201
     json ok: :wow
