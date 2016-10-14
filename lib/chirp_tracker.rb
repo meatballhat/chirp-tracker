@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 $LOAD_PATH.unshift(File.expand_path('../lib', __FILE__))
 
+require 'fileutils'
 require 'json'
 require 'openssl'
 require 'redis'
 require 'sinatra/base'
 require 'sinatra/json'
+require 'sinatra/streaming'
 require 'time'
 
 require_relative 'l2met_log'
@@ -15,6 +17,7 @@ L2metLog.default_log_level = ENV['DEBUG'] ? :debug : :info
 
 class ChirpTracker < Sinatra::Base
   include L2metLog
+  helpers Sinatra::Streaming
 
   set :db, Redis.new(
     url: (ENV[
@@ -249,6 +252,34 @@ class ChirpTracker < Sinatra::Base
         most_recent: chirps.first
       }
     )
+  end
+
+  get '/zzz' do
+    halt 400 unless params[:kb]
+
+    kilobytes = Float(params[:kb] || '1000')
+    halt 400, '{"error":"too much kb"}' if kilobytes > 1_000_000
+
+    status 200
+    content_type 'application/octet-stream'
+
+    stream do |out|
+      loop do
+        break if out.closed? || (out.pos / 1000.0) >= kilobytes
+        out.print('z' * 1000)
+        out.flush
+      end
+    end
+  end
+
+  post '/zzz' do
+    halt 400 unless params[:zzz]
+
+    tmp_path = params[:zzz][:tempfile].path
+    log message: 'received file upload', path: tmp_path
+    FileUtils.rm_f(tmp_path)
+    status 201
+    json ok: :wow
   end
 
   def run!
