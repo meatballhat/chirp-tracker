@@ -27,6 +27,7 @@ class ChirpTracker < Sinatra::Base
   set :ttl, Integer(ENV.fetch('PAYLOAD_TTL', '3600'))
   set :secret_token, ENV['SECRET_TOKEN'].to_s
   set :auths, ENV['TRAVIS_AUTHS'].to_s.split(':').map { |a| "token #{a.strip}" }
+  set :zzz_max_kb, Integer(ENV.fetch('ZZZ_MAX_KB', 1_000_000))
 
   set :travis_auth_disabled, !ENV['TRAVIS_AUTH_DISABLED'].nil?
 
@@ -255,10 +256,10 @@ class ChirpTracker < Sinatra::Base
   end
 
   get '/zzz' do
-    halt 400 unless params[:kb]
+    halt 400, '{"error":"missing kb param"}' unless params[:kb]
 
     kilobytes = Float(params[:kb] || '1000')
-    halt 400, '{"error":"too much kb"}' if kilobytes > 1_000_000
+    halt 400, '{"error":"too much kb"}' if kilobytes > settings.zzz_max_kb
 
     status 200
     content_type 'application/octet-stream'
@@ -273,14 +274,16 @@ class ChirpTracker < Sinatra::Base
   end
 
   post '/zzz' do
-    halt 400, '{"error":"missing params"}' unless params[:zzz] && params[:kb]
+    halt 400, '{"error":"missing kb param"}' unless params[:kb]
+    halt 400, '{"error":"missing zzz param"}' unless params[:zzz]
+
     kilobytes = Integer(params[:kb])
 
     tmp_path = params[:zzz][:tempfile].path
     size = File.stat(tmp_path).size
     size_kb = size / 1000
 
-    log message: 'received file upload', path: tmp_path, size: size_kb
+    log message: 'received file upload', path: tmp_path, size_kb: size_kb
 
     halt 400, %(
       {"error":"mismatched size: expected=#{kilobytes} actual=#{size_kb}"}
