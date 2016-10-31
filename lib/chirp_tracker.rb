@@ -278,7 +278,7 @@ class ChirpTracker < Sinatra::Base
 
     tmp_path = params[:bytes][:tempfile].path
     size = File.stat(tmp_path).size
-    size_kb = size / 1000
+    size_kb = size / 1000.0
 
     log message: 'received file upload', path: tmp_path, size_kb: size_kb
 
