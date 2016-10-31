@@ -287,7 +287,7 @@ class ChirpTracker < Sinatra::Base
     ).strip unless size_kb == kilobytes
 
     FileUtils.rm_f(tmp_path)
-    status 201
+    status 200
     json ok: :wow
   end
 

@@ -59,7 +59,7 @@ describe 'Chirp Tracker' do
     let(:data) { 'z' * 1000 * kb }
     let(:kb) { rand(1..9) }
 
-    it 'responds 201 when sizes match' do
+    it 'responds 200 when sizes match' do
       expect_any_instance_of(app).to receive(:log).with(
         message: 'received file upload', path: anything, size_kb: anything
       )
@@ -67,7 +67,7 @@ describe 'Chirp Tracker' do
         upload_file.path, 'application/octet-stream'
       )
       post "/kb/#{kb}", 'bytes' => bytes
-      expect(last_response.status).to eq(201)
+      expect(last_response.status).to eq(200)
       expect(last_response.body).to match(/wow/)
     end
 
