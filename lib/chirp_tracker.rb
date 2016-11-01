@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 $LOAD_PATH.unshift(File.expand_path('../lib', __FILE__))
 
+require 'fileutils'
 require 'json'
 require 'openssl'
 require 'redis'
 require 'sinatra/base'
 require 'sinatra/json'
+require 'sinatra/streaming'
 require 'time'
 
 require_relative 'l2met_log'
@@ -15,6 +17,7 @@ L2metLog.default_log_level = ENV['DEBUG'] ? :debug : :info
 
 class ChirpTracker < Sinatra::Base
   include L2metLog
+  helpers Sinatra::Streaming
 
   set :db, Redis.new(
     url: (ENV[
@@ -24,6 +27,7 @@ class ChirpTracker < Sinatra::Base
   set :ttl, Integer(ENV.fetch('PAYLOAD_TTL', '3600'))
   set :secret_token, ENV['SECRET_TOKEN'].to_s
   set :auths, ENV['TRAVIS_AUTHS'].to_s.split(':').map { |a| "token #{a.strip}" }
+  set :max_kb, Integer(ENV.fetch('MAX_KB', 1_000_000))
 
   set :travis_auth_disabled, !ENV['TRAVIS_AUTH_DISABLED'].nil?
 
@@ -249,6 +253,42 @@ class ChirpTracker < Sinatra::Base
         most_recent: chirps.first
       }
     )
+  end
+
+  get '/kb/:kb' do
+    kilobytes = Float(params[:kb] || '1000')
+    halt 400, '{"error":"too much kb"}' if kilobytes > settings.max_kb
+
+    status 200
+    content_type 'application/octet-stream'
+
+    stream do |out|
+      loop do
+        break if out.closed? || (out.pos / 1000.0) >= kilobytes
+        out.print('z' * 1000)
+        out.flush
+      end
+    end
+  end
+
+  post '/kb/:kb' do
+    halt 400, '{"error":"missing bytes param"}' unless params[:bytes]
+
+    kilobytes = Integer(params[:kb])
+
+    tmp_path = params[:bytes][:tempfile].path
+    size = File.stat(tmp_path).size
+    size_kb = size / 1000.0
+
+    log message: 'received file upload', path: tmp_path, size_kb: size_kb
+
+    halt 400, %(
+      {"error":"mismatched size: expected=#{kilobytes} actual=#{size_kb}"}
+    ).strip unless size_kb == kilobytes
+
+    FileUtils.rm_f(tmp_path)
+    status 200
+    json ok: :wow
   end
 
   def run!

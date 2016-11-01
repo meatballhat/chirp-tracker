@@ -33,4 +33,60 @@ describe 'Chirp Tracker' do
       expect(last_response.status).to eq(400)
     end
   end
+
+  context 'GET /kb/:kb' do
+    it 'responds with the requested amount of kb' do
+      get '/kb/1'
+      expect(last_response.status).to eq(200)
+      expect(last_response.body.length).to eq(1000)
+    end
+
+    it 'rejects requests over max kb' do
+      get '/kb/999999999'
+      expect(last_response.status).to eq(400)
+      expect(last_response.body).to match(/too much kb/)
+    end
+  end
+
+  context 'POST /kb/:kb' do
+    let :upload_file do
+      f = Tempfile.new('data')
+      f.write(data)
+      f.close
+      f
+    end
+
+    let(:data) { 'z' * 1000 * kb }
+    let(:kb) { rand(1..9) }
+
+    it 'responds 200 when sizes match' do
+      expect_any_instance_of(app).to receive(:log).with(
+        message: 'received file upload', path: anything, size_kb: anything
+      )
+      bytes = Rack::Test::UploadedFile.new(
+        upload_file.path, 'application/octet-stream'
+      )
+      post "/kb/#{kb}", 'bytes' => bytes
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to match(/wow/)
+    end
+
+    it 'requires bytes param' do
+      post '/kb/1', ''
+      expect(last_response.status).to eq(400)
+      expect(last_response.body).to match(/missing bytes param/)
+    end
+
+    it 'responds 400 when sizes do not match' do
+      expect_any_instance_of(app).to receive(:log).with(
+        message: 'received file upload', path: anything, size_kb: anything
+      )
+      bytes = Rack::Test::UploadedFile.new(
+        upload_file.path, 'application/octet-stream'
+      )
+      post "/kb/#{kb + 1}", 'bytes' => bytes
+      expect(last_response.status).to eq(400)
+      expect(last_response.body).to match(/mismatched size/)
+    end
+  end
 end
